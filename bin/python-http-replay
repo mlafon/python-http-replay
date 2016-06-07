@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 
-import sys, logging
+import sys, os, logging, ConfigParser
 logging.basicConfig()
+
+CFGDIR = os.path.expanduser('~/.python-http-replay')
 
 from http_replay import HttpReplayDb, HttpReplayServer
 
 def main(args):
-    srv = { 'host': '127.0.0.1', 'port': 3128 }
+    srv = { }
+    config = ConfigParser.ConfigParser({'host': '127.0.0.1', 'port': '3128'})
+    config.read([os.path.join(CFGDIR, 'config.ini')])
+    srv['host'] = config.get('config', 'host')
+    srv['port'] = int(config.get('config', 'port'))
 
     db = HttpReplayDb()
     for f in args:
