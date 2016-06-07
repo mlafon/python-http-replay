@@ -7,6 +7,12 @@ CFGDIR = os.path.expanduser('~/.python-http-replay')
 
 from http_replay import HttpReplayDb, HttpReplayServer
 
+try:
+    from netlib.certutils import CertStore
+except ImportError:
+    print 'Warning: netlib.certutils.CertStore not available, SSL support disabled'
+    CertStore = None
+
 def main(args):
     srv = { }
     config = ConfigParser.ConfigParser({'host': '127.0.0.1', 'port': '3128'})
@@ -22,6 +28,8 @@ def main(args):
     # db.dump()
 
     srv['db'] = db
+    if CertStore:
+        srv['certstore'] = CertStore.from_store(os.path.join(CFGDIR, 'ca'), 'python-http-replay')
     HttpReplayServer(**srv).start()
 
 if __name__ == '__main__':

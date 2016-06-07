@@ -90,7 +90,7 @@ class HttpReplayDb:
     @staticmethod
     def uri_for(req):
         uri = req.uri
-        if not uri.startswith('http://'):
+        if not uri.startswith('http://') and not uri.startswith('https://'):
             uri = 'http://' + req.headers.get('host', 'localhost') + uri
         if '?' in uri:
             uri = uri[:uri.index('?')]
