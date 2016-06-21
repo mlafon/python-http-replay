@@ -87,6 +87,26 @@ class HttpReplayDb:
         for req, rep in HttpReplayPcapParser(fname, filt):
             self.add_req_rep(req, rep)
 
+    def load_fiddler_raw(self, fiddlerid, fclient, fserver):
+        data_in = open(fclient, 'r').read()
+        try:
+            req = dpkt.http.Request(data_in)
+        except:
+            print 'Unable to load request from %s' % fclient
+            return
+
+        if req.method == 'CONNECT':
+            return
+
+        data_out = open(fserver, 'r').read()
+        try:
+            rep = dpkt.http.Response(data_out)
+        except:
+            print 'Unable to load %s %s response' % (req.method, req.uri)
+            return
+
+        self.add_req_rep(req, rep)
+
     @staticmethod
     def uri_for(req):
         uri = req.uri
