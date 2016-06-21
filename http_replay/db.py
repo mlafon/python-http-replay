@@ -2,6 +2,7 @@
 import dpkt
 from .pcapload import HttpReplayPcapParser
 from .log import HttpReplayLog
+from .rules import HttpReplayRules
 
 class HttpReplayUri:
     def __init__(self, uri):
@@ -82,6 +83,10 @@ class HttpReplayDb:
     def dump(self):
         for obj in self.db.values():
             obj.dump()
+
+    def finalize(self):
+        for st_url, st_path in HttpReplayRules.static_files():
+            self.add_static(st_url, st_path)
 
     def load_cap_file(self, fname, filt=''):
         for req, rep in HttpReplayPcapParser(fname, filt):

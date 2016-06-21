@@ -2,6 +2,8 @@
 from SocketServer import TCPServer, BaseRequestHandler
 import dpkt, ssl, os, hashlib, OpenSSL
 
+from .rules import HttpReplayRules
+
 DONOTLOG_EXT = None
 #DONOTLOG_EXT = ('gif', 'png', 'jpg', 'jpeg', 'css', 'js')
 
@@ -44,6 +46,8 @@ class HttpReplayHandler(BaseRequestHandler):
         reply = None
         if self.srv.db:
             reply = self.srv.db.response_for(request)
+            if reply:
+                reply = HttpReplayRules.reply_callback(request, reply)
         if not reply:
             reply = dpkt.http.Response(status='404', reason='Not found')
             reply.body = '<html><body><h1>Not found</h1></body></html>'

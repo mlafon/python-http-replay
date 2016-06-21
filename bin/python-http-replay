@@ -5,7 +5,7 @@ logging.basicConfig()
 
 CFGDIR = os.path.expanduser('~/.python-http-replay')
 
-from http_replay import HttpReplayDb, HttpReplayServer
+from http_replay import HttpReplayDb, HttpReplayServer, HttpReplayRules
 
 try:
     from netlib.certutils import CertStore
@@ -23,12 +23,15 @@ def main(args):
     db = HttpReplayDb()
     for f in args:
         if os.path.isdir(f):
+            if os.path.exists(os.path.join(f, '__init__.py')):
+                HttpReplayRules.add_module(f)
             for f_c in sorted(glob.glob('%s/*_c.txt' % f)):
                 fid = os.path.basename(f_c).replace('_c.txt', '')
                 f_s = f_c.replace('_c.txt', '_s.txt')
                 db.load_fiddler_raw(fid, f_c, f_s)
         else:
             db.load_cap_file(f)
+    db.finalize()
 
     print('%d entries in HTTP req/rep database' % db.count())
     # db.dump()

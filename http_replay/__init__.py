@@ -9,4 +9,5 @@ __version__ = '1.0-dev'
 from .db import HttpReplayUri, HttpReplayDb
 from .server import HttpReplayServer
 from .log import HttpReplayLog
+from .rules import HttpReplayRules
 
