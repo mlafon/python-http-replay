@@ -87,10 +87,14 @@ class HttpReplayDb:
     def finalize(self):
         for st_url, st_path in HttpReplayRules.static_files():
             self.add_static(st_url, st_path)
+        for re_url1, re_url2 in HttpReplayRules.redirect_rules():
+            self.add_redirect(re_url1, re_url2)
 
     def load_cap_file(self, fname, filt=''):
         for req, rep in HttpReplayPcapParser(fname, filt):
-            self.add_req_rep(req, rep)
+            req = HttpReplayRules.request_callback(req)
+            if req:
+                self.add_req_rep(req, rep)
 
     def load_fiddler_raw(self, fiddlerid, fclient, fserver):
         data_in = open(fclient, 'r').read()
@@ -101,7 +105,8 @@ class HttpReplayDb:
             print 'Unable to load request from %s' % fclient
             return
 
-        if req.method == 'CONNECT':
+        req = HttpReplayRules.request_callback(req)
+        if not req or req.method == 'CONNECT':
             return
 
         data_out = open(fserver, 'r').read()
@@ -149,6 +154,10 @@ class HttpReplayDb:
         if obj:
             for l_req, l_rep in obj.lst:
                 if HttpReplayUri.same_req(l_req, req):
-                    return l_rep
+                    lst.append((l_req, l_rep))
+            if len(lst) == 1:
+                return lst[0][1]
+            if len(lst) > 1:
+                return HttpReplayRules.choose_reply(req, lst)
         return None
 

@@ -25,11 +25,33 @@ class HttpReplayRulesClass:
                 st.append((url, path))
         return st
 
+    def redirect_rules(self):
+        redir = []
+        for mod in self.modules:
+            if not hasattr(mod, 'REDIRECTS'):
+                continue
+            for url1, url2 in mod.REDIRECTS:
+                redir.append((url1, url2))
+        return redir
+
+    def request_callback(self, request):
+        for mod in self.modules:
+            if callable(getattr(mod, 'request_callback', None)):
+                request = mod.request_callback(request)
+        return request
+
     def reply_callback(self, request, reply):
         for mod in self.modules:
             if callable(getattr(mod, 'reply_callback', None)):
                 reply = mod.reply_callback(request, reply)
         return reply
+
+    def choose_reply(self, request, lst):
+        for mod in self.modules:
+            if callable(getattr(mod, 'choose_reply', None)):
+                return mod.choose_reply(request, lst)
+        print 'Warning: %d req/rep found for %s, using first' % (len(lst), request.uri)
+        return lst[0][1]
 
 HttpReplayRules = HttpReplayRulesClass()
 

@@ -92,6 +92,7 @@ class HttpReplayHandler(BaseRequestHandler):
             request = self.recv_request_over_ssl(request)
 
         if request:
+            request = HttpReplayRules.request_callback(request)
             reply = self.find_reply(request)
             self.dumplog(request, reply)
             self.socket.send(str(reply))
