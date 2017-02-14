@@ -31,8 +31,8 @@ class HttpReplayUri:
         return a.status == b.status and a.body == b.body
 
     def add(self, req, rep):
-        if rep.status == '304':
-            HttpReplayLog.debug('Ignoring 304 (not modified) response [%s]' % self.uri)
+        if rep.status in ['304', '401', '407', '503']:
+            HttpReplayLog.debug('Ignoring %s response [%s]' % (rep.status, self.uri))
             return
 
         if rep.status == '206':
@@ -50,10 +50,10 @@ class HttpReplayUri:
             else:
                 HttpReplayLog.debug('Ignoring 206 (partial content) response')
 
-        if rep.status not in ['200', '302', '404']:
-            HttpReplayLog.warning('Unexpected response status %s' % rep.status)
+        if rep.status not in ['200', '301', '302', '404']:
+            HttpReplayLog.warning('Unexpected response status %s for %s %s' % (rep.status, req.method, req.uri))
 
-        if rep.headers.get('transfer-encoding') == 'chunked':
+        if rep.headers.get('transfer-encoding', '').lower() == 'chunked':
             HttpReplayLog.debug('removing chunked transfer-encoding header')
             del rep.headers['transfer-encoding']
 
@@ -96,6 +96,7 @@ class HttpReplayDb:
         data_in = open(fclient, 'r').read()
         try:
             req = dpkt.http.Request(data_in)
+            req.rawid = fiddlerid
         except:
             print 'Unable to load request from %s' % fclient
             return
@@ -106,10 +107,12 @@ class HttpReplayDb:
         data_out = open(fserver, 'r').read()
         try:
             rep = dpkt.http.Response(data_out)
+            rep.rawid = fiddlerid
         except:
             print 'Unable to load %s %s response' % (req.method, req.uri)
             return
 
+        HttpReplayLog.request(req, rep, loading=True)
         self.add_req_rep(req, rep)
 
     @staticmethod
@@ -129,12 +132,16 @@ class HttpReplayDb:
         req = dpkt.http.Request(method='GET', uri=uri)
         rep = dpkt.http.Response(status='200', reason='OK',
             body=open(fname).read())
+        rep.rawid = 'S'
+        HttpReplayLog.request(req, rep, loading=True)
         self.add_req_rep(req, rep)
 
     def add_redirect(self, uri, redir):
         req = dpkt.http.Request(method='GET', uri=uri)
         rep = dpkt.http.Response(status='302', reason='Found')
         rep.headers['location'] = redir
+        rep.rawid = 'R'
+        HttpReplayLog.request(req, rep, loading=True)
         self.add_req_rep(req, rep)
 
     def response_for(self, req):

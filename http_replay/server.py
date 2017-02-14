@@ -3,6 +3,7 @@ from SocketServer import TCPServer, BaseRequestHandler
 import dpkt, ssl, os, hashlib, OpenSSL
 
 from .rules import HttpReplayRules
+from .log import HttpReplayLog
 
 DONOTLOG_EXT = None
 #DONOTLOG_EXT = ('gif', 'png', 'jpg', 'jpeg', 'css', 'js')
@@ -23,8 +24,7 @@ class HttpReplayHandler(BaseRequestHandler):
                 ext = uri[uri.rindex('.')+1:]
                 if ext.lower() in DONOTLOG_EXT:
                     return
-        print('%s - %s %s (%d)' % \
-            (rep.status, req.method, req.uri, len(rep.body)))
+        HttpReplayLog.request(req, rep)
 
     def recv_request(self):
         req = ''
